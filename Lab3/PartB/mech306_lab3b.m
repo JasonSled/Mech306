@@ -1,6 +1,8 @@
-function answer = mech306_lab3b()
+function [a, b] = mech306_lab3b()
     clear
     clf
+    clc
+    %format long
     
     l1= .158; %black rod, len, m
     d1 = .009; %diam, m
@@ -27,8 +29,7 @@ function answer = mech306_lab3b()
     %}
     
     %func getCoeff solves for a & b, given a set of IV, a set of T, and Tsurr
-    %and plot theoretical values in blue, real value in red
-    [a, b] = getCoeff(T, V, i, Tsurr);
+    CoeffSet = getCoeffSet(T, V, i, Tsurr);
     
     %NOTE that our y = IV, x = T is very linear, 
     %so trying to make it fit a n=4 polynomial is either going to give you:
@@ -38,9 +39,36 @@ function answer = mech306_lab3b()
     %NOTE that the way matlab interpolate plots, there can be multiple values
     %run this code multiple times and compare h to h from Whitaker approximation
     
-    %func solveForEpiAndHFromCoeff solve (a) = (epsilon)(sigma)(A) and (b) = (h)(A)
-    %for epsilon and h, respectively
-    answer = solveForEpiAndHFromCoeff(a, b, A);
+    %func CoeffSetToValSet solve (a) = (epsilon)(sigma)(A) and (b) = (h)(A)
+    %for epsilon and h, respectively, and output them in a matrix
+    ValSet = CoeffSetToValSet(CoeffSet, A);
+    
+    %func getBestCoeff compares 100 a&b's to h from Whitaker approximation and returns the closest matching pair
+    [a, b] = getBestVal(ValSet);
+    
+    %func solveForEpiAndHFromCoeff solve 
+    %[ep, h] = solveForEpiAndHFromCoeff(a, b, A);
+end
+
+function ValSet = CoeffSetToValSet(CoeffSet, A)
+    [r, c] = size(CoeffSet);
+    ValSet = zeros(r, c);
+    for i = 1:r
+        [e, h] = solveForEpiAndHFromCoeff(CoeffSet(i, 1), CoeffSet(i, 2), A);
+        ValSet(i, 1) = e;
+        ValSet(i, 2) = h;
+    end
+    disp(ValSet);
+end
+
+function CoeffSet = getCoeffSet(T, V, i, Tsurr)
+    CoeffSet = zeros(100, 2);
+    for f = 1:100
+        [a, b] = getCoeff(T, V, i, Tsurr);
+        CoeffSet(f, 1) = a;
+        CoeffSet(f, 2) = b;
+    end
+    %disp(CoeffSet);
 end
 
 function [coeff1, coeff2] = getCoeff(T, V, i, Tsurr)
@@ -51,28 +79,45 @@ function [coeff1, coeff2] = getCoeff(T, V, i, Tsurr)
     
     ft = fittype( @(a,b,c,d,x) a*x.^4+b*x+a*c+b*d, 'problem', {'c', 'd'});
     [fitobj,~,~,~]=fit(x,y,ft, 'problem', {-(Tsurr^4), -Tsurr}); %[fitobj, goodness, output, convmsg]=fit(x,y,ft)
-     coeff1=fitobj.a;
-      coeff2=fitobj.b;
-      coeff3=fitobj.c;
-      coeff4=fitobj.d;
+    coeff1=fitobj.a;
+    coeff2=fitobj.b;
+    %coeff3=fitobj.c;
+    %disp(coeff3);
+    %coeff4=fitobj.d;
+    %disp(coeff4);
 
-    %{
-    p = polyfit(x, y, 4);
-    coeff1 = p(1);
-    coeff2 = p(3);
-    coeff3 = p(5);
-    %}
      yfit=coeff1*x.^4+coeff2*x-coeff1*(Tsurr^4)-coeff2*Tsurr;     %Remember dot notation
      
+     %{
      clf
      figure(1)
      hold
      plot(x, y, '-r');
      plot(x, yfit, '-b');
+     %}
 end
 
-function answer = solveForEpiAndHFromCoeff(a, b, A)
-    answer = zeros(2);
-    answer(1) = a/(5.67*10^(-8)*A);
-    answer(2) = b/A;
+function [bestE, bestH] = getBestVal(coeffSet)
+    
+    whitakerH = 26; %TODO: calculate whitaker h
+    
+    set = coeffSet(1, :);
+    bestE = set(1);
+    bestH = set(2);
+    for f = 1:100
+        set = coeffSet(f, :);
+        a = set(1);
+        b = set(2);
+        if (abs(whitakerH - bestH) > abs(whitakerH - b))
+            disp(bestH);
+            bestE = a;
+            bestH = b;
+        end
+    end
+    disp(bestH);
+end
+
+function [ep, h] = solveForEpiAndHFromCoeff(a, b, A)
+    ep = a/(5.67*10^(-8)*A);
+    h = b/A;
 end
