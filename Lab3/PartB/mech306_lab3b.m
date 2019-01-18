@@ -1,8 +1,8 @@
 function [a, b] = mech306_lab3b()
     clear
     clf
-    clc
     %format long
+    format short
     
     l1= .158; %black rod, len, m
     d1 = .009; %diam, m
@@ -18,7 +18,7 @@ function [a, b] = mech306_lab3b()
     i = [.05 .26 .46 .65]; %A
     t = [60 60]; %sec
     x = .158; %distance from fan, m
-    A = d1*l1*pi+pi*(d1^2)/2; %surface area of rod, m^2
+    A = d1*l1*pi+2*pi*((d1/2)^2); %surface area of rod, m^2, 
     
     %{
     Since dT/dt = 0, we can simplify our equation to:
@@ -43,11 +43,9 @@ function [a, b] = mech306_lab3b()
     %for epsilon and h, respectively, and output them in a matrix
     ValSet = CoeffSetToValSet(CoeffSet, A);
     
-    %func getBestCoeff compares 100 a&b's to h from Whitaker approximation and returns the closest matching pair
+    %func getBestVal compares 100 e&h's to h from Whitaker approximation and returns the closest matching pair
     [a, b] = getBestVal(ValSet);
     
-    %func solveForEpiAndHFromCoeff solve 
-    %[ep, h] = solveForEpiAndHFromCoeff(a, b, A);
 end
 
 function ValSet = CoeffSetToValSet(CoeffSet, A)
@@ -58,7 +56,7 @@ function ValSet = CoeffSetToValSet(CoeffSet, A)
         ValSet(i, 1) = e;
         ValSet(i, 2) = h;
     end
-    disp(ValSet);
+    %disp(ValSet);
 end
 
 function CoeffSet = getCoeffSet(T, V, i, Tsurr)
@@ -99,7 +97,7 @@ end
 
 function [bestE, bestH] = getBestVal(coeffSet)
     
-    whitakerH = 26; %TODO: calculate whitaker h
+    whitakerH = 52.3406; %number from Cole
     
     set = coeffSet(1, :);
     bestE = set(1);
@@ -109,12 +107,12 @@ function [bestE, bestH] = getBestVal(coeffSet)
         a = set(1);
         b = set(2);
         if (abs(whitakerH - bestH) > abs(whitakerH - b))
-            disp(bestH);
+            %disp(bestH);
             bestE = a;
             bestH = b;
         end
     end
-    disp(bestH);
+    %disp(bestH);
 end
 
 function [ep, h] = solveForEpiAndHFromCoeff(a, b, A)
